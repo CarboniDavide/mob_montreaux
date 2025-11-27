@@ -3,52 +3,86 @@
 		<v-row justify="center">
 			<v-col cols="12" md="8">
 				<v-card elevation="3" class="pa-6">
-					<v-card-title class="text-h6">Find distance — Montreux</v-card-title>
+					<v-card-title class="text-h6">Find shortest distance between stations</v-card-title>
 
 					<v-card-text>
-						<p class="mb-6 text-subtitle-1">
-							Calculate the straight-line distance (great-circle) between two coordinates.
-							Enter latitude/longitude for the two points and click "Calculate".
-						</p>
+						<div class="mb-4">
+							<p class="text-subtitle-1">Pick two stations and compute the shortest path (Dijkstra) using the backend route calculator.</p>
+						</div>
 
 						<v-row>
 							<v-col cols="12" md="6">
-								<v-card outlined class="pa-4">
-									<div class="text-subtitle-2 mb-3">Point A</div>
-									<v-text-field v-model.number="aLat" label="Latitude (°)" type="number" :rules="latRules" />
-									<v-text-field v-model.number="aLon" label="Longitude (°)" type="number" :rules="lonRules" />
-								</v-card>
+								<v-autocomplete
+									v-model="fromShort"
+									:items="stations"
+									item-title="label"
+									item-value="short"
+									label="From station"
+									:loading="loadingStations"
+									:disabled="!isReady"
+									clearable
+								/>
 							</v-col>
 
 							<v-col cols="12" md="6">
-								<v-card outlined class="pa-4">
-									<div class="text-subtitle-2 mb-3">Point B</div>
-									<v-text-field v-model.number="bLat" label="Latitude (°)" type="number" :rules="latRules" />
-									<v-text-field v-model.number="bLon" label="Longitude (°)" type="number" :rules="lonRules" />
-								</v-card>
+								<v-autocomplete
+									v-model="toShort"
+									:items="stations"
+									item-title="label"
+									item-value="short"
+									label="To station"
+									:loading="loadingStations"
+									:disabled="!isReady"
+									clearable
+								/>
 							</v-col>
 						</v-row>
 
 						<v-row class="mt-4" align="center">
 							<v-col cols="12" md="6">
-								<v-btn color="primary" @click="calculate" :disabled="!validInputs">Calculate</v-btn>
-								<v-btn variant="text" @click="reset" class="ml-3">Reset</v-btn>
+								<v-text-field v-model="analyticCode" label="Analytic code (optional)" placeholder="e.g. WEB-UI" />
 							</v-col>
 
 							<v-col cols="12" md="6" class="text-right">
-								<div v-if="distanceKm !== null" class="text-h6">Distance: {{ distanceKm.toFixed(3) }} km</div>
-								<div v-else class="text-caption grey--text">Result will appear here</div>
+								<v-btn color="primary" @click="findRoute" :loading="finding" :disabled="!canQuery">Find shortest route</v-btn>
+								<v-btn variant="text" @click="reset" class="ml-3">Reset</v-btn>
 							</v-col>
 						</v-row>
 
 						<v-divider class="my-6" />
 
-						<div class="text-body-1">
-							<strong>Notes</strong>
-							<ul>
-								<li>This is the great-circle (Haversine) distance — shortest route over the earth’s surface.</li>
-								<li>Coordinates should be in decimal degrees (for example Montreux Station: 46.4311, 6.9094).</li>
-							</ul>
+						<div v-if="!isLogged" class="mb-4">
+							<v-alert type="info" dense>
+								Authentication required to query routes. Please <NuxtLink to="/login">login</NuxtLink> or <NuxtLink to="/register">create an account</NuxtLink>.
+							</v-alert>
+						</div>
+
+						<div v-if="error" class="mb-4">
+							<v-alert type="error" dense>{{ error }}</v-alert>
+						</div>
+
+						<div v-if="routeResult" class="mt-4">
+							<v-card outlined class="pa-4">
+								<div class="d-flex justify-space-between align-center mb-3">
+									<div>
+										<div class="text-subtitle-1">Distance</div>
+										<div class="text-h5">{{ routeResult.distanceKm.toFixed(3) }} km</div>
+									</div>
+									<div class="text-right">
+										<div class="text-subtitle-1">ID</div>
+										<div class="text-caption">{{ routeResult.id }}</div>
+									</div>
+								</div>
+
+								<v-divider class="my-3" />
+
+								<div>
+									<div class="text-subtitle-2 mb-2">Path (ordered stations)</div>
+									<v-chip-group>
+										<v-chip v-for="(s, i) in routeResult.path" :key="i" class="ma-1" color="primary" variant="tonal">{{ s }}</v-chip>
+									</v-chip-group>
+								</div>
+							</v-card>
 						</div>
 					</v-card-text>
 				</v-card>
@@ -57,71 +91,80 @@
 	</v-container>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 
-export default defineComponent({
-	name: 'FindDistancePage',
-	data() {
-		return {
-			// defaults are helpful — Montreux station coordinates used as one example
-			aLat: 46.4311 as number | null,
-			aLon: 6.9094 as number | null,
-			bLat: 46.5200 as number | null,
-			bLon: 6.6300 as number | null,
-			distanceKm: null as number | null,
-		}
-	},
-	computed: {
-		latRules(): ((v: number|null) => boolean|string)[] {
-			return [
-				(v: number|null) => v !== null && !Number.isNaN(v) || 'Required',
-				(v: number|null) => (v === null || (v >= -90 && v <= 90)) || 'Latitude must be between -90 and 90',
-			]
-		},
-		lonRules(): ((v: number|null) => boolean|string)[] {
-			return [
-				(v: number|null) => v !== null && !Number.isNaN(v) || 'Required',
-				(v: number|null) => (v === null || (v >= -180 && v <= 180)) || 'Longitude must be between -180 and 180',
-			]
-		},
-		validInputs(): boolean {
-			return [this.aLat, this.aLon, this.bLat, this.bLon].every(v => v !== null && !Number.isNaN(v))
-		}
-	},
-	methods: {
-		calculate(): void {
-			if (!this.validInputs) {
-				this.distanceKm = null
-				return
-			}
-			const toRad = (d: number) => (d * Math.PI) / 180
+const auth = useAuthStore()
+auth.init()
 
-			const R = 6371 // Earth radius in km
-			const lat1 = toRad(this.aLat as number)
-			const lon1 = toRad(this.aLon as number)
-			const lat2 = toRad(this.bLat as number)
-			const lon2 = toRad(this.bLon as number)
+const isLogged = computed(() => auth.isLogged)
 
-			const dLat = lat2 - lat1
-			const dLon = lon2 - lon1
+const stations = ref<Array<{ id: number; short: string; long: string; label: string }>>([])
+const loadingStations = ref(false)
 
-			const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-								Math.cos(lat1) * Math.cos(lat2) *
-								Math.sin(dLon / 2) * Math.sin(dLon / 2)
+const fromShort = ref<string | null>('MX')
+const toShort = ref<string | null>('CGE')
+const analyticCode = ref<string>('WEB')
 
-			const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-			this.distanceKm = R * c
-		},
-		reset(): void {
-			this.aLat = 46.4311
-			this.aLon = 6.9094
-			this.bLat = 46.5200
-			this.bLon = 6.6300
-			this.distanceKm = null
-		}
+const finding = ref(false)
+const routeResult = ref<any | null>(null)
+const error = ref<string | null>(null)
+
+const isReady = computed(() => isLogged.value)
+const canQuery = computed(() => isReady.value && fromShort.value && toShort.value && fromShort.value !== toShort.value)
+
+const { $apiFetch } = useNuxtApp()
+
+async function loadStations() {
+	if (!isLogged.value) return
+	loadingStations.value = true
+	try {
+		const items = await $apiFetch('/stations')
+		// map items to { id, short, long, label }
+		stations.value = (items || []).map((s: any) => ({ id: s.id, short: s.short_name || s.short, long: s.long_name || s.long, label: `${s.short_name} — ${s.long_name}` }))
+	} catch (err: any) {
+		// show a friendly message
+		error.value = err?.message || 'Failed to load stations. Make sure you are logged in and your backend is running.'
+	} finally {
+		loadingStations.value = false
 	}
-})
+}
+
+async function findRoute() {
+	error.value = null
+	routeResult.value = null
+	if (!canQuery.value) return
+	finding.value = true
+	try {
+		const body = { fromStationId: fromShort.value, toStationId: toShort.value, analyticCode: analyticCode.value || 'WEB' }
+		const res = await $apiFetch('/routes', { method: 'POST', body })
+		routeResult.value = res
+	} catch (err: any) {
+		// display clear messages for auth or validation errors
+		if (err?.status === 401) {
+			error.value = 'Unauthorized. Please login.'
+		} else if (err?.data?.message) {
+			error.value = err.data.message
+		} else {
+			error.value = err?.message || 'Failed to calculate route.'
+		}
+	} finally {
+		finding.value = false
+	}
+}
+
+function reset() {
+	fromShort.value = null
+	toShort.value = null
+	analyticCode.value = 'WEB'
+	routeResult.value = null
+	error.value = null
+}
+
+onMounted(() => loadStations())
+// if the user logs in after the page mounted, reload stations
+watch(isLogged, (v) => { if (v) loadStations() })
 </script>
 
 <style scoped>
