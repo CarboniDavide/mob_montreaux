@@ -18,7 +18,7 @@ Route::prefix('v1')->middleware('auth:api')->group(function () {
 	// Stations
 	Route::get('stations', [StationsController::class, 'index']);
 	Route::get('stations/p/{short}', [StationsController::class, 'findByShort']);
-	Route::get('stations/{id}', [StationsController::class, 'show']);
+  Route::get('stations/{id}', [StationsController::class, 'show']);
 
 	// Distances
 	Route::get('distances', [DistancesController::class, 'index']);
