@@ -1,0 +1,80 @@
+# =====================================================
+#   Line endings normalization
+# =====================================================
+* text=auto eol=lf
+
+# =====================================================
+#   GitHub Linguist — classify folders correctly
+# =====================================================
+backend/*  linguist-language=PHP
+frontend/* linguist-language=JavaScript
+
+# Blade templates as HTML for diffs
+*.blade.php linguist-language=HTML
+
+# =====================================================
+#   JavaScript / TypeScript handling
+# =====================================================
+*.ts   text
+*.tsx  text
+*.js   text
+*.jsx  text
+*.mjs  text
+*.cjs  text
+*.json text
+*.yaml text
+*.yml  text
+
+# Minified JS/CSS not diffed
+*.min.js -diff
+*.min.css -diff
+
+# =====================================================
+#   Nuxt build output (should not be diffed)
+# =====================================================
+frontend/.nuxt/**   -diff
+frontend/.output/** -diff
+frontend/dist/**    -diff
+
+# =====================================================
+#   Laravel generated files
+# =====================================================
+backend/storage/**         -diff
+backend/bootstrap/cache/** -diff
+
+# =====================================================
+#   Binary files
+# =====================================================
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.svg  binary
+*.webp binary
+*.mp4  binary
+*.mp3  binary
+*.mov  binary
+*.zip  binary
+*.gz   binary
+*.pdf  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.eot  binary
+*.otf  binary
+
+# =====================================================
+#   Lock files (LF, clean diffs)
+# =====================================================
+package-lock.json text eol=lf
+yarn.lock        text eol=lf
+pnpm-lock.yaml   text eol=lf
+composer.lock    text eol=lf
+
+# =====================================================
+#   Executable scripts
+# =====================================================
+*.sh eol=lf
+
+

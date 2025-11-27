@@ -1,0 +1,68 @@
+# ===========================================
+#          GLOBAL IGNORE (root)
+# ===========================================
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===========================================
+#          BACKEND (Laravel)
+# ===========================================
+backend/vendor/
+backend/node_modules/
+backend/public/storage
+backend/storage/*.key
+backend/storage/app/public
+backend/storage/framework/cache/data
+backend/storage/framework/sessions/*
+backend/storage/framework/testing/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+
+# Laravel specific
+backend/.phpunit.result.cache
+backend/phpunit.xml
+backend/.php_cs.cache
+backend/.php-cs-fixer.cache
+
+# ===========================================
+#          FRONTEND (Nuxt)
+# ===========================================
+frontend/node_modules/
+frontend/.nuxt/
+frontend/.output/
+frontend/.cache/
+frontend/dist/
+
+# Nuxt environment
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Yarn/PNPM/Build artifacts
+frontend/.yarn/
+frontend/.pnp*
+frontend/build/
+frontend/npm-debug.log*
+
+# Lock files (optional, choose one)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
