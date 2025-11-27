@@ -7,7 +7,19 @@
         <div>
           <NuxtLink to="/" class="mr-4 text-white">Home</NuxtLink>
           <NuxtLink to="/find-distance" class="mr-4 text-white">Find Distance</NuxtLink>
-          <NuxtLink to="/about" class="text-white">About</NuxtLink>
+          <NuxtLink to="/about" class="mr-4 text-white">About</NuxtLink>
+          <span class="auth-separator" aria-hidden="true"></span>
+
+          <div class="d-inline-flex align-center ml-6">
+            <div v-if="auth.isLogged" class="mr-4">
+              <span class="text-white mr-3">{{ auth.user?.name || auth.user?.email }}</span>
+              <v-btn text class="text-white" @click="logout">Logout</v-btn>
+            </div>
+            <div v-else>
+              <NuxtLink to="/login" class="mr-3 text-white">Login</NuxtLink>
+              <NuxtLink to="/register" class="text-white">Register</NuxtLink>
+            </div>
+          </div>
         </div>
       </v-container>
     </v-app-bar>
@@ -29,4 +41,17 @@
 </template>
 
 <script setup>
+import { useAuthStore } from '~/stores/auth'
+import { useRouter } from '#imports'
+
+const auth = useAuthStore()
+auth.init()
+
+const router = useRouter()
+
+function logout() {
+  auth.logout()
+  router.push('/')
+}
+
 </script>
