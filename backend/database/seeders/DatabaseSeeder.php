@@ -21,5 +21,11 @@ class DatabaseSeeder extends Seeder
             'name' => 'Mob User',
             'email' => 'user@mob.ch',
         ]);
+
+        // seed stations and distances from JSON files
+        $this->call([
+            StationsSeeder::class,
+            DistancesSeeder::class,
+        ]);
     }
 }
