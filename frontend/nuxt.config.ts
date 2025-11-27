@@ -3,7 +3,8 @@ import { defineNuxtConfig } from "nuxt/config";
 export default defineNuxtConfig({
   css: [
     'vuetify/styles',
-    '@mdi/font/css/materialdesignicons.css'
+    '@mdi/font/css/materialdesignicons.css',
+    '~/assets/css/global.css'
   ],
   modules: [
     '@pinia/nuxt',
