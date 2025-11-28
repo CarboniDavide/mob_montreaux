@@ -3,19 +3,34 @@
     <v-row justify="center">
       <v-col cols="12" md="6">
         <v-card class="pa-6" elevation="4">
-          <v-card-title class="text-h6">Sign in</v-card-title>
+          <div class="text-center mb-4">
+            <v-icon size="48" color="primary" class="mb-3">mdi-login</v-icon>
+            <v-card-title class="text-h5 font-weight-bold">Sign in</v-card-title>
+          </div>
 
           <v-card-text>
             <v-form ref="formRef" v-model="valid">
-              <v-text-field v-model="email" label="Email" type="email" required />
-              <v-text-field v-model="password" label="Password" type="password" required />
+              <v-text-field 
+                v-model="email" 
+                label="Email" 
+                type="email" 
+                prepend-inner-icon="mdi-email"
+                required 
+              />
+              <v-text-field 
+                v-model="password" 
+                label="Password" 
+                type="password" 
+                prepend-inner-icon="mdi-lock"
+                required 
+              />
 
               <v-row class="mt-4">
                 <v-col cols="6">
-                  <v-btn color="primary" @click="doLogin" :disabled="!valid">Login</v-btn>
+                  <v-btn color="primary" @click="doLogin" :disabled="!valid" block prepend-icon="mdi-login-variant">Login</v-btn>
                 </v-col>
-                <v-col cols="6" class="text-right">
-                  <NuxtLink to="/register">Create account</NuxtLink>
+                <v-col cols="6">
+                  <v-btn color="primary" variant="outlined" to="/register" block prepend-icon="mdi-account-plus">Create account</v-btn>
                 </v-col>
               </v-row>
 
@@ -47,12 +62,30 @@ export default defineComponent({
 
     async function doLogin() {
       error.value = null
+      
+      // Validate fields before sending
+      if (!email.value || !password.value) {
+        error.value = 'Please enter your email and password'
+        return
+      }
+      
       try {
         await auth.login(email.value, password.value)
         // redirect to home or returnPath
         await router.push('/')
       } catch (err: any) {
-        error.value = err?.message || 'Login failed'
+        // Parse different error types
+        if (err?.status === 422) {
+          error.value = 'Invalid email or password format'
+        } else if (err?.status === 401) {
+          error.value = 'Incorrect email or password'
+        } else if (err?.data?.message) {
+          error.value = err.data.message
+        } else if (err?.message) {
+          error.value = err.message
+        } else {
+          error.value = 'Login failed. Please try again'
+        }
       }
     }
 
