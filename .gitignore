@@ -15,6 +15,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!backend/.env.testing
 
 # Logs
 npm-debug.log*
