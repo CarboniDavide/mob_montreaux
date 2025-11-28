@@ -1,0 +1,96 @@
+name: mob_montreaux
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: mob_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-mob}
+      POSTGRES_USER: ${DB_USERNAME:-mob}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mob}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-mob_user} -d ${DB_DATABASE:-mob_db}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - mob_network
+
+  # Laravel Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      args:
+        WWWGROUP: '1000'
+    container_name: mob_backend
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-mob}
+      DB_USERNAME: ${DB_USERNAME:-mob}
+      DB_PASSWORD: ${DB_PASSWORD:-mob}
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "9000"
+    networks:
+      - mob_network
+
+  # Nginx for Backend API
+  nginx:
+    image: nginx:1.25
+    container_name: mob_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www/html:ro
+      - ./backend/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - mob_network
+
+  # Nuxt Frontend (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: mob_frontend
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+      - "24678:24678"
+    environment:
+      NUXT_HOST: 0.0.0.0
+      NUXT_PORT: 3000
+      # Backend API URL for frontend
+      NUXT_PUBLIC_API_BASE: http://localhost:8000/api/v1
+    depends_on:
+      - backend
+      - nginx
+    networks:
+      - mob_network
+
+volumes:
+  db_data:
+
+networks:
+  mob_network:
+    driver: bridge
