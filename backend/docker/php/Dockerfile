@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libxml2-dev \
     curl \
+    postgresql-client \
     && docker-php-ext-install pdo_pgsql zip opcache
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -23,5 +24,9 @@ COPY . .
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 
+# Copy and set permissions for entrypoint script
+COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 EXPOSE 9000
-CMD ["php-fpm"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
