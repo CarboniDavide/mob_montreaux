@@ -35,7 +35,7 @@
 
               <v-btn 
                 color="primary" 
-                href="/find-distance" 
+                to="/find-distance" 
                 size="large"
                 prepend-icon="mdi-map-marker-distance"
                 variant="flat"
