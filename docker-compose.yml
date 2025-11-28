@@ -34,6 +34,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./backend:/var/www/html
+      - /var/www/html/vendor
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -76,7 +77,6 @@ services:
       - /app/node_modules
     ports:
       - "3000:3000"
-      - "24678:24678"
     environment:
       NUXT_HOST: 0.0.0.0
       NUXT_PORT: 3000

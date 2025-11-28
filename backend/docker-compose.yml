@@ -27,7 +27,7 @@ services:
       dockerfile: ./docker/php/Dockerfile
       args:
         WWWGROUP: '1000'
-    container_name: api
+    container_name: backend
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
