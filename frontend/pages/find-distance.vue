@@ -1,15 +1,15 @@
 <template>
 	<v-container class="py-10">
 		<v-row justify="center">
-			<v-col cols="12" md="8">
-				<v-card elevation="3" class="pa-6">
-					<v-card-title class="text-h6">Find shortest distance between stations</v-card-title>
+			<v-col cols="12" md="10" lg="8">
+				<v-card elevation="6" class="pa-8">
+					<div class="text-center mb-6">
+						<v-icon size="56" color="primary" class="mb-3">mdi-map-marker-distance</v-icon>
+						<v-card-title class="text-h4 font-weight-bold mb-2">Route Calculator</v-card-title>
+						<p class="text-subtitle-1 text-grey-darken-1">Find the shortest path between stations using Dijkstra's algorithm</p>
+					</div>
 
 					<v-card-text>
-						<div class="mb-4">
-							<p class="text-subtitle-1">Pick two stations and compute the shortest path (Dijkstra) using the backend route calculator.</p>
-						</div>
-
 						<v-row>
 							<v-col cols="12" md="6">
 								<v-autocomplete
@@ -21,10 +21,10 @@
 									:loading="loadingStations"
 									:disabled="!isReady"
 									clearable
+									variant="outlined"
+									prepend-inner-icon="mdi-map-marker"
 								/>
-							</v-col>
 
-							<v-col cols="12" md="6">
 								<v-autocomplete
 									v-model="toShort"
 									:items="stations"
@@ -34,18 +34,46 @@
 									:loading="loadingStations"
 									:disabled="!isReady"
 									clearable
+									variant="outlined"
+									prepend-inner-icon="mdi-flag-checkered"
+									class="mt-4"
+								/>
+
+								<v-text-field 
+									v-model="analyticCode" 
+									label="Analytic code (optional)" 
+									placeholder="e.g. WEB-UI" 
+									prepend-inner-icon="mdi-tag"
+									variant="outlined"
+									class="mt-4"
 								/>
 							</v-col>
-						</v-row>
 
-						<v-row class="mt-4" align="center">
-							<v-col cols="12" md="6">
-								<v-text-field v-model="analyticCode" label="Analytic code (optional)" placeholder="e.g. WEB-UI" />
-							</v-col>
+							<v-divider vertical class="mx-6"></v-divider>
 
-							<v-col cols="12" md="6" class="text-right">
-								<v-btn color="primary" @click="findRoute" :loading="finding" :disabled="!canQuery">Find shortest route</v-btn>
-								<v-btn variant="text" @click="reset" class="ml-3">Reset</v-btn>
+							<v-col cols="12" md="5" class="d-flex flex-column justify-center align-center">
+								<v-btn 
+									color="primary" 
+									@click="findRoute" 
+									:loading="finding" 
+									:disabled="!canQuery"
+									size="x-large"
+									prepend-icon="mdi-routes"
+									variant="flat"
+									block
+									class="mb-4"
+								>
+									Calculate
+								</v-btn>
+								<v-btn 
+									variant="outlined" 
+									@click="reset"
+									size="x-large"
+									prepend-icon="mdi-refresh"
+									block
+								>
+									Reset
+								</v-btn>
 							</v-col>
 						</v-row>
 
@@ -61,25 +89,41 @@
 							<v-alert type="error" dense>{{ error }}</v-alert>
 						</div>
 
-						<div v-if="routeResult" class="mt-4">
-							<v-card outlined class="pa-4">
-								<div class="d-flex justify-space-between align-center mb-3">
+						<div v-if="routeResult" class="mt-6">
+							<v-card outlined class="pa-6" elevation="3">
+								<div class="d-flex justify-space-between align-center mb-4">
 									<div>
-										<div class="text-subtitle-1">Distance</div>
-										<div class="text-h5">{{ routeResult.distanceKm.toFixed(3) }} km</div>
+										<div class="text-subtitle-1 text-grey-darken-1">Total Distance</div>
+										<div class="text-h4 text-primary font-weight-bold">{{ routeResult.distanceKm.toFixed(3) }} km</div>
 									</div>
 									<div class="text-right">
-										<div class="text-subtitle-1">ID</div>
-										<div class="text-caption">{{ routeResult.id }}</div>
+										<v-chip color="success" variant="flat">
+											<v-icon start size="small">mdi-check-circle</v-icon>
+											Route Found
+										</v-chip>
+										<div class="text-caption text-grey-darken-1 mt-2">ID: {{ routeResult.id }}</div>
 									</div>
 								</div>
 
-								<v-divider class="my-3" />
+								<v-divider class="my-4" />
 
 								<div>
-									<div class="text-subtitle-2 mb-2">Path (ordered stations)</div>
+									<div class="text-h6 mb-3 d-flex align-center">
+										<v-icon class="mr-2" color="primary">mdi-routes</v-icon>
+										Station Path
+									</div>
 									<v-chip-group>
-										<v-chip v-for="(s, i) in routeResult.path" :key="i" class="ma-1" color="primary" variant="tonal">{{ s }}</v-chip>
+										<v-chip 
+											v-for="(s, i) in routeResult.path" 
+											:key="i" 
+											class="ma-1" 
+											:color="i === 0 ? 'success' : i === routeResult.path.length - 1 ? 'error' : 'primary'" 
+											variant="flat"
+										>
+											<v-icon v-if="i === 0" start size="small">mdi-map-marker</v-icon>
+											<v-icon v-else-if="i === routeResult.path.length - 1" start size="small">mdi-flag-checkered</v-icon>
+											{{ s }}
+										</v-chip>
 									</v-chip-group>
 								</div>
 							</v-card>
