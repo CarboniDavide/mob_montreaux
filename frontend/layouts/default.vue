@@ -11,13 +11,15 @@
           <span class="auth-separator" aria-hidden="true"></span>
 
           <div class="d-inline-flex align-center ml-6">
-            <div v-if="auth.isLogged" class="mr-4">
-              <span class="text-white mr-3">{{ auth.user?.name || auth.user?.email }}</span>
-              <v-btn text class="text-white" @click="logout">Logout</v-btn>
-            </div>
-            <div v-else>
-              <NuxtLink to="/login" class="mr-3 text-white">Login</NuxtLink>
-              <NuxtLink to="/register" class="text-white">Register</NuxtLink>
+            <div v-if="initialized">
+              <div v-if="auth.isLogged" class="mr-4">
+                <span class="text-white mr-3">{{ auth.user?.name || auth.user?.email }}</span>
+                <v-btn text class="text-white" @click="logout">Logout</v-btn>
+              </div>
+              <div v-else>
+                <NuxtLink to="/login" class="mr-3 text-white">Login</NuxtLink>
+                <NuxtLink to="/register" class="text-white">Register</NuxtLink>
+              </div>
             </div>
           </div>
         </div>
@@ -41,17 +43,21 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useRouter } from '#imports'
 
 const auth = useAuthStore()
-auth.init()
-
 const router = useRouter()
+const initialized = ref(false)
+
+onMounted(async () => {
+  await auth.init()
+  initialized.value = true
+})
 
 function logout() {
   auth.logout()
   router.push('/')
 }
-
 </script>

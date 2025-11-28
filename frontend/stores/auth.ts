@@ -6,15 +6,29 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: null as string | null,
     user: null as User | null,
+    initialized: false,
   }),
   getters: {
     isLogged: (state) => !!state.token,
   },
   actions: {
-    init() {
+    async init() {
+      if (this.initialized) return
+      
       if (process.client) {
         const token = localStorage.getItem('api_token')
-        if (token) this.token = token
+        if (token) {
+          this.token = token
+          try {
+            await this.me()
+          } catch (error) {
+            // Token invalid, clear it
+            this.token = null
+            this.user = null
+            localStorage.removeItem('api_token')
+          }
+        }
+        this.initialized = true
       }
     },
 

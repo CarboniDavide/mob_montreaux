@@ -140,7 +140,17 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
 const auth = useAuthStore()
-auth.init()
+const authInitialized = ref(false)
+
+definePageMeta({
+  requiresAuth: true
+})
+
+onMounted(async () => {
+	await auth.init()
+	authInitialized.value = true
+	loadStations()
+})
 
 const isLogged = computed(() => auth.isLogged)
 
@@ -155,13 +165,12 @@ const finding = ref(false)
 const routeResult = ref<any | null>(null)
 const error = ref<string | null>(null)
 
-const isReady = computed(() => isLogged.value)
+const isReady = computed(() => authInitialized.value)
 const canQuery = computed(() => isReady.value && fromShort.value && toShort.value && fromShort.value !== toShort.value)
 
 const { $apiFetch } = useNuxtApp()
 
 async function loadStations() {
-	if (!isLogged.value) return
 	loadingStations.value = true
 	try {
 		const items = await $apiFetch('/stations')
@@ -206,7 +215,6 @@ function reset() {
 	error.value = null
 }
 
-onMounted(() => loadStations())
 // if the user logs in after the page mounted, reload stations
 watch(isLogged, (v) => { if (v) loadStations() })
 </script>
