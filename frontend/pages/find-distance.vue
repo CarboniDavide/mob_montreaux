@@ -12,34 +12,28 @@
 					<v-card-text>
 						<v-row>
 							<v-col cols="12" md="6">
-								<v-autocomplete
-									v-model="fromShort"
-									:items="stations"
-									item-title="label"
-									item-value="short"
-									label="From station"
-									:loading="loadingStations"
-									:disabled="!isReady"
-									clearable
-									variant="outlined"
-									prepend-inner-icon="mdi-map-marker"
-								/>
-
-								<v-autocomplete
-									v-model="toShort"
-									:items="stations"
-									item-title="label"
-									item-value="short"
-									label="To station"
-									:loading="loadingStations"
-									:disabled="!isReady"
-									clearable
-									variant="outlined"
-									prepend-inner-icon="mdi-flag-checkered"
-									class="mt-4"
-								/>
-
-								<v-text-field 
+						<v-autocomplete
+							v-model="fromShort"
+							:items="stations"
+							item-title="label"
+							item-value="short"
+							label="From station"
+							:loading="loadingStations"
+							clearable
+							variant="outlined"
+							prepend-inner-icon="mdi-map-marker"
+						/>						<v-autocomplete
+							v-model="toShort"
+							:items="stations"
+							item-title="label"
+							item-value="short"
+							label="To station"
+							:loading="loadingStations"
+							clearable
+							variant="outlined"
+							prepend-inner-icon="mdi-flag-checkered"
+							class="mt-4"
+						/>								<v-text-field 
 									v-model="analyticCode" 
 									label="Analytic code (optional)" 
 									placeholder="e.g. WEB-UI" 
@@ -78,12 +72,6 @@
 						</v-row>
 
 						<v-divider class="my-6" />
-
-						<div v-if="!isLogged" class="mb-4">
-							<v-alert type="info" dense>
-								Authentication required to query routes. Please <NuxtLink to="/login">login</NuxtLink> or <NuxtLink to="/register">create an account</NuxtLink>.
-							</v-alert>
-						</div>
 
 						<div v-if="error" class="mb-4">
 							<v-alert type="error" dense>{{ error }}</v-alert>
@@ -136,11 +124,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
+import { useStationsStore } from '~/stores/stations'
+import { useRoutesStore } from '~/stores/routes'
+
+// Default values
+const DEFAULT_FROM = 'MX'
+const DEFAULT_TO = 'CGE'
+const DEFAULT_ANALYTIC_CODE = 'WEB'
 
 const auth = useAuthStore()
-const authInitialized = ref(false)
+const stationsStore = useStationsStore()
+const routesStore = useRoutesStore()
 
 definePageMeta({
   requiresAuth: true
@@ -148,75 +144,46 @@ definePageMeta({
 
 onMounted(async () => {
 	await auth.init()
-	authInitialized.value = true
-	loadStations()
+	await stationsStore.fetchStations()
 })
 
-const isLogged = computed(() => auth.isLogged)
+// Stations
+const stations = computed(() => stationsStore.stations)
+const loadingStations = computed(() => stationsStore.loading)
 
-const stations = ref<Array<{ id: number; short: string; long: string; label: string }>>([])
-const loadingStations = ref(false)
+// Form fields
+const fromShort = ref<string | null>(DEFAULT_FROM)
+const toShort = ref<string | null>(DEFAULT_TO)
+const analyticCode = ref<string>(DEFAULT_ANALYTIC_CODE)
 
-const fromShort = ref<string | null>('MX')
-const toShort = ref<string | null>('CGE')
-const analyticCode = ref<string>('WEB')
+// Route calculation
+const finding = computed(() => routesStore.loading)
+const routeResult = computed(() => routesStore.currentRoute)
+const error = computed(() => routesStore.error)
 
-const finding = ref(false)
-const routeResult = ref<any | null>(null)
-const error = ref<string | null>(null)
-
-const isReady = computed(() => authInitialized.value)
-const canQuery = computed(() => isReady.value && fromShort.value && toShort.value && fromShort.value !== toShort.value)
-
-const { $apiFetch } = useNuxtApp()
-
-async function loadStations() {
-	loadingStations.value = true
-	try {
-		const items = await $apiFetch('/stations')
-		// map items to { id, short, long, label }
-		stations.value = (items || []).map((s: any) => ({ id: s.id, short: s.short_name || s.short, long: s.long_name || s.long, label: `${s.short_name} — ${s.long_name}` }))
-	} catch (err: any) {
-		// show a friendly message
-		error.value = err?.message || 'Failed to load stations. Make sure you are logged in and your backend is running.'
-	} finally {
-		loadingStations.value = false
-	}
-}
+// Validation
+const canQuery = computed(() => 
+	fromShort.value && 
+	toShort.value && 
+	fromShort.value !== toShort.value
+)
 
 async function findRoute() {
-	error.value = null
-	routeResult.value = null
 	if (!canQuery.value) return
-	finding.value = true
-	try {
-		const body = { fromStationId: fromShort.value, toStationId: toShort.value, analyticCode: analyticCode.value || 'WEB' }
-		const res = await $apiFetch('/routes', { method: 'POST', body })
-		routeResult.value = res
-	} catch (err: any) {
-		// display clear messages for auth or validation errors
-		if (err?.status === 401) {
-			error.value = 'Unauthorized. Please login.'
-		} else if (err?.data?.message) {
-			error.value = err.data.message
-		} else {
-			error.value = err?.message || 'Failed to calculate route.'
-		}
-	} finally {
-		finding.value = false
-	}
+	
+	await routesStore.calculateRoute(
+		fromShort.value!,
+		toShort.value!,
+		analyticCode.value || 'WEB'
+	)
 }
 
 function reset() {
 	fromShort.value = null
 	toShort.value = null
-	analyticCode.value = 'WEB'
-	routeResult.value = null
-	error.value = null
+	analyticCode.value = DEFAULT_ANALYTIC_CODE
+	routesStore.clearCurrentRoute()
 }
-
-// if the user logs in after the page mounted, reload stations
-watch(isLogged, (v) => { if (v) loadStations() })
 </script>
 
 <style scoped>
