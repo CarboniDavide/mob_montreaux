@@ -4,9 +4,11 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\TrainRoute;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class TrainRouteTest extends TestCase
 {
+    use RefreshDatabase;
 
     public function test_train_route_can_be_created()
     {

@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Station;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class StationsTest extends TestCase
 {
+    use RefreshDatabase;
 
     protected function authenticatedUser()
     {

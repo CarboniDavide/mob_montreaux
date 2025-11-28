@@ -7,9 +7,11 @@ use App\Models\User;
 use App\Models\Station;
 use App\Models\Distance;
 use App\Models\TrainRoute;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class RoutesTest extends TestCase
 {
+    use RefreshDatabase;
 
     protected function authenticatedUser()
     {

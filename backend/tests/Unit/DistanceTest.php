@@ -5,9 +5,11 @@ namespace Tests\Unit;
 use Tests\TestCase;
 use App\Models\Distance;
 use App\Models\Station;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class DistanceTest extends TestCase
 {
+    use RefreshDatabase;
 
     public function test_distance_can_be_created()
     {
