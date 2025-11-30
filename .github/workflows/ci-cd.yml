@@ -5,11 +5,12 @@ on:
     branches:
       - main
       - dev
+      - test-pipeline
   pull_request:
     branches:
       - main
       - dev
-
+      - test-pipeline
 jobs:
   test:
     name: Run Tests
