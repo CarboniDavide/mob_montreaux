@@ -40,6 +40,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        // API guard using JWT tokens (requires tymon/jwt-auth or similar)
+        'api' => [
+            'driver' => env('API_GUARD_DRIVER', 'jwt'),
+            'provider' => 'users',
+        ],
     ],
 
     /*
