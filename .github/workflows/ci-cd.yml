@@ -41,15 +41,13 @@ jobs:
           extensions: pdo, pgsql, zip, opcache
           coverage: none
 
-      - name: Copy .env.testing
-        working-directory: ./backend
-        run: |
-          cp .env.testing .env
-          php artisan key:generate
-
       - name: Install Composer dependencies
         working-directory: ./backend
         run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Copy .env.testing
+        working-directory: ./backend
+        run: cp .env.testing .env
 
       - name: Run database migrations
         working-directory: ./backend

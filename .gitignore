@@ -40,9 +40,11 @@ backend/storage/logs/*
 
 # Laravel specific
 backend/.phpunit.result.cache
-backend/phpunit.xml
 backend/.php_cs.cache
 backend/.php-cs-fixer.cache
+
+# Test artifacts
+test-results
 
 # ===========================================
 #          FRONTEND (Nuxt)
