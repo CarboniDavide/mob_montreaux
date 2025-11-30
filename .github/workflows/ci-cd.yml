@@ -97,6 +97,10 @@ jobs:
         working-directory: ./frontend
         run: npm install
 
+      - name: Generate Nuxt types
+        working-directory: ./frontend
+        run: npx nuxi prepare
+
       - name: Run Vitest tests
         working-directory: ./frontend
         run: npm test
