@@ -40,9 +40,10 @@ After pushing your code:
 1. Go to: `https://github.com/CarboniDavide/mob_montreaux/actions`
 2. You'll see your workflow runs listed by commit message
 3. Click on any workflow run to see details
-4. You'll see two jobs:
-   - **✓ Run Tests** (runs first)
-   - **🚀 Deploy Application** (only runs if tests pass and on `main` branch)
+4. You'll see three jobs:
+   - **✓ Run Backend Tests** (runs first)
+   - **✓ Run Frontend Tests** (runs in parallel with backend tests)
+   - **🚀 Deploy Application** (only runs if both test jobs pass and on `main` branch)
 
 ### Step 4: Understanding the Actions Tab
 
@@ -136,12 +137,20 @@ Example badge:
 ### ✅ Successful Run
 
 ```
-Run Tests                    ✓ 2m 34s
+Run Backend Tests            ✓ 2m 34s
 ├─ Checkout code            ✓ 5s
 ├─ Setup PHP                ✓ 45s
 ├─ Install dependencies     ✓ 1m 20s
 ├─ Run migrations           ✓ 3s
 └─ Run PHPUnit tests        ✓ 21s
+
+Run Frontend Tests           ✓ 1m 45s
+├─ Checkout code            ✓ 5s
+├─ Setup Node.js            ✓ 15s
+├─ Cache node modules       ✓ 10s
+├─ Install dependencies     ✓ 40s
+├─ Generate Nuxt types      ✓ 8s
+└─ Run Vitest tests         ✓ 27s (26 tests)
 
 Deploy Application           ✓ 1m 15s
 └─ Deploy to production     ✓ 1m 15s
@@ -155,13 +164,16 @@ Deploy Application           ✓ 1m 15s
 ### ❌ Failed Run
 
 ```
-Run Tests                    ✗ 1m 45s
+Run Backend Tests            ✗ 1m 45s
 ├─ Checkout code            ✓ 5s
 ├─ Setup PHP                ✓ 45s
 ├─ Install dependencies     ✓ 1m 20s
 ├─ Run migrations           ✓ 3s
 └─ Run PHPUnit tests        ✗ 12s
     Error: Test failed in StationTest.php
+
+Run Frontend Tests           ✓ 1m 45s
+├─ All Vitest tests passed  ✓ 27s (26 tests)
 
 Deploy Application           ⊘ Skipped
 ```
@@ -177,19 +189,32 @@ Deploy Application           ⊘ Skipped
 
 ### GitHub Actions
 Tests run automatically on:
-- ✅ Push to `main` or `develop` branches
-- ✅ Pull requests to `main` or `develop` branches
+- ✅ Push to `main` or `dev` branches
+- ✅ Pull requests to `main` or `dev` branches
 
-The workflow:
-1. Sets up PHP 8.4 and PostgreSQL
-2. Installs dependencies
-3. Runs database migrations
+The workflow runs two parallel test jobs:
+
+**Backend Tests:**
+1. Sets up PHP 8.4 and PostgreSQL service
+2. Installs Composer dependencies
+3. Runs database migrations with SQLite
 4. Executes all PHPUnit tests
-5. Deploys if all tests pass (only on `main` branch)
+
+**Frontend Tests:**
+1. Sets up Node.js 20
+2. Caches node_modules for faster builds
+3. Installs npm dependencies
+4. Generates Nuxt type definitions
+5. Executes all Vitest tests (26 tests)
+
+**Deployment:**
+- Only runs if BOTH test jobs pass
+- Only on `main` branch pushes
 
 ### Local Testing
 Run tests locally before committing:
 
+**Backend Tests:**
 ```bash
 # From project root
 cd backend
@@ -200,6 +225,19 @@ cd backend
 ./test.sh --testsuite=Feature
 ```
 
+**Frontend Tests:**
+```bash
+# From project root
+cd frontend
+npm test
+
+# Or run with coverage
+npm run test:coverage
+
+# Or run in watch mode (for development)
+npm run test:watch
+```
+
 ---
 
 ## 🚀 Deployment Process
@@ -208,12 +246,13 @@ cd backend
 
 **Happens when:**
 - You push to `main` branch
-- All tests pass ✅
+- All backend tests pass ✅
+- All frontend tests pass ✅
 
 **What happens:**
 1. Code is pushed to GitHub
-2. Tests run automatically
-3. If tests pass → Deployment starts
+2. Backend and frontend tests run in parallel
+3. If BOTH test jobs pass → Deployment starts
 4. Application is deployed
 
 **To trigger automatic deployment:**
@@ -364,9 +403,11 @@ cat ~/.ssh/id_rsa
 | File | Purpose |
 |------|---------|
 | `.github/workflows/ci-cd.yml` | GitHub Actions workflow - defines what happens on push/PR |
-| `backend/test.sh` | Test runner script - runs tests safely with SQLite |
+| `backend/test.sh` | Test runner script - runs backend tests safely with SQLite |
 | `backend/.env.testing` | Testing environment - uses SQLite instead of PostgreSQL |
-| `backend/phpunit.xml` | PHPUnit configuration - test settings |
+| `backend/phpunit.xml` | PHPUnit configuration - backend test settings |
+| `frontend/vitest.config.ts` | Vitest configuration - frontend test settings |
+| `frontend/tests/setup.ts` | Global test mocks - Nuxt composables and browser APIs |
 | `deploy.sh` | Deployment script - manual deployment with tests |
 
 ---
@@ -378,7 +419,7 @@ cat ~/.ssh/id_rsa
 **Solution:**
 1. Check Actions tab is enabled: `https://github.com/CarboniDavide/mob_montreaux/actions`
 2. Verify workflow file exists: `.github/workflows/ci-cd.yml`
-3. Make sure you pushed to `main` or `develop` branch
+3. Make sure you pushed to `main` or `dev` branch
 
 ### "Tests fail on GitHub but pass locally"
 
@@ -405,11 +446,24 @@ cat ~/.ssh/id_rsa
 
 ### "How do I view detailed test failures?"
 
+**For Backend Tests:**
 1. Go to: `https://github.com/CarboniDavide/mob_montreaux/actions`
 2. Click on the failed workflow run
-3. Click on "Run Tests" job
+3. Click on "Run Backend Tests" job
 4. Click on "Run PHPUnit tests" step
 5. Scroll through logs to see exact error
+
+**For Frontend Tests:**
+1. Go to: `https://github.com/CarboniDavide/mob_montreaux/actions`
+2. Click on the failed workflow run
+3. Click on "Run Frontend Tests" job
+4. Click on "Run Vitest tests" step
+5. Scroll through logs to see which tests failed
+
+**Common Frontend Test Issues:**
+- **Missing Nuxt types**: Fixed by `npx nuxi prepare` step in CI
+- **Mocking errors**: Check `frontend/tests/setup.ts` for global mocks
+- **Store tests failing**: Ensure `mockApiFetch` is properly configured
 
 ### "Deployment didn't happen after tests passed"
 
@@ -423,10 +477,10 @@ cat ~/.ssh/id_rsa
 
 ### "I want to test the workflow before merging to main"
 
-**Solution:** Push to `develop` branch first
+**Solution:** Push to `dev` branch first
 ```bash
-git checkout -b develop
-git push origin develop
+git checkout -b dev
+git push origin dev
 # Tests will run but won't deploy
 ```
 
@@ -444,13 +498,19 @@ git push origin develop
 
 1. **Add code coverage reports**
    ```bash
+   # Backend
    vendor/bin/phpunit --coverage-html coverage
+   
+   # Frontend
+   npm run test:coverage
    ```
 
-2. **Add code quality checks** (PHPStan, PHP CS Fixer)
+2. **Add code quality checks** (PHPStan, PHP CS Fixer, ESLint)
 3. **Add security scanning**
-4. **Add frontend tests** (Vitest, Playwright)
+4. **Add E2E tests** (Playwright, Cypress)
 5. **Add staging environment**
+6. **Set coverage thresholds** (e.g., 80% minimum)
+7. **Add component tests** for Vue pages
 
 ### Monitor Your Deployments
 
