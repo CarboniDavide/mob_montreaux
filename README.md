@@ -306,6 +306,8 @@ git push origin main
 
 #### Backend (.env)
 
+basically rename env.example to .env. All key are included for this projet
+
 ```env
 APP_NAME="MOB Montreaux"
 APP_ENV=local
@@ -314,11 +316,11 @@ APP_DEBUG=true
 DB_CONNECTION=pgsql
 DB_HOST=db
 DB_PORT=5432
-DB_DATABASE=mob_db
-DB_USERNAME=mob_user
-DB_PASSWORD=mob_password
+DB_DATABASE=mob
+DB_USERNAME=mob
+DB_PASSWORD=mob
 
-JWT_SECRET=your-secret-key
+JWT_SECRET=a key is ready to use for this projet
 ```
 
 #### Frontend (.env)
