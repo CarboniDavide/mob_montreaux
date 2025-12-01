@@ -40,10 +40,11 @@ After pushing your code:
 1. Go to: `https://github.com/CarboniDavide/mob_montreaux/actions`
 2. You'll see your workflow runs listed by commit message
 3. Click on any workflow run to see details
-4. You'll see three jobs:
+3. You'll see four jobs:
    - **✓ Run Backend Tests** (runs first)
    - **✓ Run Frontend Tests** (runs in parallel with backend tests)
-   - **🚀 Deploy Application** (only runs if both test jobs pass and on `main` branch)
+   - **🐳 Build and Push Docker Images** (runs after tests pass, only on `main` branch)
+   - **🚀 Deploy Application** (only runs if tests and image builds pass, only on `main` branch)
 
 ### Step 4: Understanding the Actions Tab
 
@@ -152,12 +153,22 @@ Run Frontend Tests           ✓ 1m 45s
 ├─ Generate Nuxt types      ✓ 8s
 └─ Run Vitest tests         ✓ 27s (26 tests)
 
+Build and Push Docker Images ✓ 3m 20s
+├─ Checkout code            ✓ 5s
+├─ Set up Docker Buildx     ✓ 10s
+├─ Login to GHCR            ✓ 5s
+├─ Build backend image      ✓ 1m 30s
+├─ Push backend image       ✓ 40s
+├─ Build frontend image     ✓ 50s
+└─ Push frontend image      ✓ 20s
+
 Deploy Application           ✓ 1m 15s
 └─ Deploy to production     ✓ 1m 15s
 ```
 
 **What this means:**
 - All tests passed ✅
+- Docker images built and published ✅
 - Code is safe to deploy ✅
 - Deployment happened automatically ✅
 
@@ -175,12 +186,13 @@ Run Backend Tests            ✗ 1m 45s
 Run Frontend Tests           ✓ 1m 45s
 ├─ All Vitest tests passed  ✓ 27s (26 tests)
 
+Build and Push Docker Images ⊘ Skipped
 Deploy Application           ⊘ Skipped
 ```
 
 **What this means:**
 - Tests failed ❌
-- Deployment was blocked (good!) 🛡️
+- Image builds and deployment were blocked (good!) 🛡️
 - You need to fix the code ⚠️
 
 ---
@@ -207,8 +219,18 @@ The workflow runs two parallel test jobs:
 4. Generates Nuxt type definitions
 5. Executes all Vitest tests (26 tests)
 
+**Build and Push Docker Images:**
+- Runs after BOTH test jobs pass
+- Only on `main` branch pushes
+- Builds backend and frontend Docker images
+- Pushes to GitHub Container Registry (ghcr.io)
+- Tags images with: branch name, commit SHA, and `latest`
+- Images available at:
+  - `ghcr.io/carbonidavide/mob_montreaux/backend`
+  - `ghcr.io/carbonidavide/mob_montreaux/frontend`
+
 **Deployment:**
-- Only runs if BOTH test jobs pass
+- Only runs if tests AND image builds pass
 - Only on `main` branch pushes
 
 ### Local Testing
@@ -252,8 +274,10 @@ npm run test:watch
 **What happens:**
 1. Code is pushed to GitHub
 2. Backend and frontend tests run in parallel
-3. If BOTH test jobs pass → Deployment starts
-4. Application is deployed
+3. If BOTH test jobs pass → Docker images are built
+4. Images are tagged and pushed to GitHub Container Registry
+5. If image builds succeed → Deployment starts
+6. Application is deployed using the new Docker images
 
 **To trigger automatic deployment:**
 ```bash
@@ -409,6 +433,7 @@ cat ~/.ssh/id_rsa
 | `frontend/vitest.config.ts` | Vitest configuration - frontend test settings |
 | `frontend/tests/setup.ts` | Global test mocks - Nuxt composables and browser APIs |
 | `deploy.sh` | Deployment script - manual deployment with tests |
+| `push-images.sh` | Manual Docker image push script - build and publish to GHCR |
 
 ---
 
@@ -487,6 +512,52 @@ git push origin dev
 ---
 
 ## 📚 Next Steps
+
+### Docker Image Management
+
+**View Your Published Images:**
+1. Go to your GitHub profile: https://github.com/CarboniDavide?tab=packages
+2. You'll see `mob_montreaux/backend` and `mob_montreaux/frontend` packages
+3. Click to view tags, download statistics, and usage instructions
+
+**Pull Images Locally:**
+```bash
+# Pull latest images
+docker pull ghcr.io/carbonidavide/mob_montreaux/backend:latest
+docker pull ghcr.io/carbonidavide/mob_montreaux/frontend:latest
+
+# Pull specific version by commit SHA
+docker pull ghcr.io/carbonidavide/mob_montreaux/backend:sha-abc1234
+
+# Run the images
+docker run -p 8000:8000 ghcr.io/carbonidavide/mob_montreaux/backend:latest
+docker run -p 3000:3000 ghcr.io/carbonidavide/mob_montreaux/frontend:latest
+```
+
+**Manual Image Push:**
+If you want to push images manually (not via CI/CD):
+```bash
+# From project root
+./push-images.sh
+
+# You'll need:
+# 1. GitHub Personal Access Token with 'write:packages' permission
+#    Create at: https://github.com/settings/tokens
+# 2. Docker running on your machine
+```
+
+The script will:
+- ✓ Login to GitHub Container Registry
+- ✓ Build both backend and frontend images
+- ✓ Tag with your chosen version
+- ✓ Push to ghcr.io
+- ✓ Provide pull commands
+
+**Image Visibility Settings:**
+By default, images are public. To make them private:
+1. Go to: https://github.com/CarboniDavide?tab=packages
+2. Click on the package
+3. Click "Package settings" → Change visibility
 
 ### Learn More About GitHub Actions
 
