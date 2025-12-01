@@ -21,6 +21,7 @@ A full-stack application for calculating optimal train routes and distances in t
 ### DevOps
 - **Containerization:** Docker & Docker Compose
 - **CI/CD:** GitHub Actions
+- **Container Registry:** GitHub Container Registry (GHCR)
 - **Web Server:** Nginx
 
 ---
@@ -66,11 +67,30 @@ mob_montreaux/
 │
 ├── docker-compose.yml          # Development environment
 ├── docker-compose.prod.yml     # Production environment
+├── push-images.sh             # Manual Docker image publishing script
+├── deploy.sh                  # Deployment script
 ├── .github/workflows/
 │   └── ci-cd.yml              # CI/CD pipeline
 ├── CI-CD.md                   # CI/CD documentation
+├── DOCKER.md                  # Docker documentation
 └── README.md                  # This file
 ```
+
+---
+
+---
+
+## ✨ Features
+
+- 🚂 **Route Calculation:** Find optimal train routes using Dijkstra's algorithm
+- 🎨 **MOB Design System:** Swiss railway-inspired design matching MOB.ch
+- 🔐 **Secure Authentication:** JWT-based user authentication and authorization
+- 📊 **Route History:** Track and review past route calculations
+- 🐳 **Docker Ready:** Fully containerized for consistent deployment
+- ⚡ **CI/CD Pipeline:** Automated testing, building, and deployment
+- 📦 **Container Registry:** Automated Docker image publishing to GHCR
+- 🧪 **Comprehensive Testing:** PHPUnit (backend) and Vitest (frontend)
+- 📱 **Responsive Design:** Mobile-first responsive interface
 
 ---
 
@@ -213,16 +233,35 @@ docker-compose exec backend bash
 docker-compose exec frontend sh
 ```
 
+### Publishing Docker Images
+
+```bash
+# Automatic (via CI/CD)
+# Push to main branch - images automatically built and pushed to GHCR
+git push origin main
+
+# Manual (using push-images.sh script)
+# Requires GitHub Personal Access Token with write:packages permission
+./push-images.sh
+
+# Manual (using Docker commands)
+docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/carbonidavide/mob_montreaux/backend:latest ./backend --push
+docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/carbonidavide/mob_montreaux/frontend:latest ./frontend --push
+```
+
+**See [CI-CD.md](CI-CD.md) for complete Docker image publishing guide.**
+
 ---
 
 ## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
-| [CI-CD.md](CI-CD.md) | Complete CI/CD pipeline guide |
-| [DOCKER.md](DOCKER.md) | Docker configuration and usage |
+| [CI-CD.md](CI-CD.md) | CI/CD pipeline and Docker image publishing |
+| [DOCKER.md](DOCKER.md) | Docker configuration, usage, and deployment |
 | [backend/TESTS.md](backend/TESTS.md) | Backend testing guide (PHPUnit) |
 | [frontend/TESTS.md](frontend/TESTS.md) | Frontend testing guide (Vitest) |
+| [push-images.sh](push-images.sh) | Manual Docker image publishing script |
 
 ---
 
