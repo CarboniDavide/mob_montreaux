@@ -345,20 +345,7 @@ git push origin main
 
 #### Backend (.env)
 
-```env
-APP_NAME="MOB Montreaux"
-APP_ENV=local
-APP_DEBUG=true
-
-DB_CONNECTION=pgsql
-DB_HOST=db
-DB_PORT=5432
-DB_DATABASE=mob_db
-DB_USERNAME=mob_user
-DB_PASSWORD=mob_password
-
-JWT_SECRET=your-secret-key
-```
+a .env.example is available. Just rename to .env and you are ready to go
 
 #### Frontend (.env)
 
