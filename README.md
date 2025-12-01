@@ -111,6 +111,8 @@ cd mob_montreaux
 
 ### 2. Start Development Environment
 
+before rename in backend and frontend folder the .env.example to .env
+
 ```bash
 # Start all services (backend, frontend, database, nginx)
 docker-compose up -d
