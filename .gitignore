@@ -65,8 +65,7 @@ frontend/.pnp*
 frontend/build/
 frontend/npm-debug.log*
 
-# Lock files (optional, choose one)
-package-lock.json
+# Lock files (optional, keep package-lock for npm ci in production)
 yarn.lock
 pnpm-lock.yaml
 
